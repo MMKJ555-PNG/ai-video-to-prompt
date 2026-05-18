@@ -1,0 +1,1897 @@
+<!DOCTYPE html>
+<html class="dark" lang="zh-CN">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <meta http-equiv="Content-Security-Policy" content="default-src * 'unsafe-inline' 'unsafe-eval' data: blob:; img-src * data: blob:; media-src * data: blob:; frame-src *;"/>
+    <title>AI 视频转提示词</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries" crossorigin="anonymous"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" crossorigin="anonymous"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" crossorigin="anonymous"/>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "surface-container-lowest": "#060e20",
+                        "on-secondary-fixed": "#001f26",
+                        "surface-container": "#171f33",
+                        "on-error": "#690005",
+                        "on-secondary": "#003640",
+                        "on-surface": "#dae2fd",
+                        "background": "#0b1326",
+                        "surface-tint": "#d0bcff",
+                        "surface-container-highest": "#2d3449",
+                        "on-error-container": "#ffdad6",
+                        "secondary-container": "#03b5d3",
+                        "inverse-primary": "#6d3bd7",
+                        "on-tertiary-container": "#4d0059",
+                        "on-background": "#dae2fd",
+                        "secondary-fixed-dim": "#4cd7f6",
+                        "surface-container-high": "#222a3d",
+                        "surface-bright": "#31394d",
+                        "on-secondary-fixed-variant": "#004e5c",
+                        "primary": "#d0bcff",
+                        "on-tertiary-fixed": "#36003e",
+                        "primary-fixed-dim": "#d0bcff",
+                        "on-primary-container": "#340080",
+                        "tertiary-fixed-dim": "#fbabff",
+                        "on-tertiary": "#580065",
+                        "inverse-on-surface": "#283044",
+                        "tertiary-fixed": "#ffd6fd",
+                        "outline-variant": "#494454",
+                        "inverse-surface": "#dae2fd",
+                        "error-container": "#93000a",
+                        "outline": "#958ea0",
+                        "error": "#ffb4ab",
+                        "secondary-fixed": "#acedff",
+                        "primary-fixed": "#e9ddff",
+                        "on-primary-fixed-variant": "#5516be",
+                        "surface-variant": "#2d3449",
+                        "on-primary-fixed": "#23005c",
+                        "tertiary": "#fbabff",
+                        "secondary": "#4cd7f6",
+                        "surface": "#0b1326",
+                        "primary-container": "#a078ff",
+                        "tertiary-container": "#e14ef6",
+                        "on-secondary-container": "#00424e",
+                        "on-surface-variant": "#cbc3d7",
+                        "surface-container-low": "#131b2e",
+                        "surface-dim": "#0b1326",
+                        "on-primary": "#3c0091",
+                        "on-tertiary-fixed-variant": "#7c008e"
+                    },
+                    borderRadius: {
+                        DEFAULT: "0.25rem",
+                        lg: "0.5rem",
+                        xl: "0.75rem",
+                        full: "9999px"
+                    },
+                    spacing: {
+                        "container-max": "1440px",
+                        "margin-desktop": "48px",
+                        "gutter": "24px",
+                        "margin-mobile": "16px",
+                        "stack-gap": "16px",
+                        "unit": "8px",
+                        "section-gap": "80px"
+                    },
+                    fontFamily: {
+                        "body-md": ["Inter"],
+                        "label-md": ["Inter"],
+                        "headline-md": ["Space Grotesk"],
+                        "headline-xl": ["Space Grotesk"],
+                        "headline-lg": ["Space Grotesk"],
+                        "label-sm": ["Inter"],
+                        "body-lg": ["Inter"]
+                    },
+                    fontSize: {
+                        "body-md": ["16px", { lineHeight: "1.6", fontWeight: "400" }],
+                        "label-md": ["14px", { lineHeight: "1.2", letterSpacing: "0.05em", fontWeight: "600" }],
+                        "headline-md": ["24px", { lineHeight: "1.3", fontWeight: "600" }],
+                        "headline-xl": ["48px", { lineHeight: "1.1", letterSpacing: "-0.02em", fontWeight: "700" }],
+                        "headline-lg": ["32px", { lineHeight: "1.2", fontWeight: "600" }],
+                        "label-sm": ["12px", { lineHeight: "1.2", fontWeight: "500" }],
+                        "body-lg": ["18px", { lineHeight: "1.6", fontWeight: "400" }]
+                    }
+                }
+            }
+        };
+    </script>
+    <style>
+        body {
+            background-color: #0b1326;
+            color: #dae2fd;
+            overflow-x: hidden;
+            font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+        }
+        /* file:// 协议下 Google Fonts 可能加载失败，设置可靠的回退字体 */
+        .font-body-md, .font-label-md, .font-body-lg, .font-label-sm {
+            font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+        }
+        .font-headline-md, .font-headline-xl, .font-headline-lg {
+            font-family: 'Space Grotesk', 'Inter', 'PingFang SC', sans-serif;
+        }
+        /* Material Icons 回退 — 简单字符替代 */
+        .material-symbols-outlined {
+            font-family: 'Material Symbols Outlined', sans-serif;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: inset 0px 1px 0px 0px rgba(255, 255, 255, 0.05);
+        }
+        .glass-card-strong {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            box-shadow: inset 0px 1px 0px 0px rgba(255, 255, 255, 0.08);
+        }
+        .glow-bg {
+            position: fixed;
+            width: 100vw;
+            height: 100vh;
+            top: 0;
+            left: 0;
+            z-index: -1;
+            pointer-events: none;
+            background: radial-gradient(circle at 50% 50%, rgba(109, 59, 215, 0.15) 0%, transparent 70%),
+                        radial-gradient(circle at 80% 20%, rgba(76, 215, 246, 0.08) 0%, transparent 40%);
+        }
+        .primary-gradient-btn {
+            background: linear-gradient(135deg, #a078ff 0%, #6d3bd7 100%);
+            box-shadow: 0 8px 32px -8px rgba(109, 59, 215, 0.5);
+        }
+        .primary-gradient-btn:hover {
+            box-shadow: 0 12px 40px -8px rgba(109, 59, 215, 0.65);
+        }
+        .primary-gradient-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+        .primary-glow {
+            box-shadow: 0 0 15px rgba(208, 188, 255, 0.4);
+        }
+        .nav-blur {
+            background: rgba(19, 26, 46, 0.3);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: inset 0px 1px 0px 0px rgba(255, 255, 255, 0.1);
+        }
+        /* Animations */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes scaleIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        @keyframes slideInRight {
+            from { transform: translateX(100%); }
+            to { transform: translateX(0); }
+        }
+        @keyframes slideOutRight {
+            from { transform: translateX(0); }
+            to { transform: translateX(100%); }
+        }
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 20px rgba(160, 120, 255, 0.2); }
+            50% { box-shadow: 0 0 40px rgba(160, 120, 255, 0.5); }
+        }
+        .animate-fade-in-up {
+            animation: fadeInUp 0.6s ease-out forwards;
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+        .animate-scale-in {
+            animation: scaleIn 0.4s ease-out forwards;
+        }
+        .animate-delay-100 { animation-delay: 0.1s; opacity: 0; }
+        .animate-delay-200 { animation-delay: 0.2s; opacity: 0; }
+        .animate-delay-300 { animation-delay: 0.3s; opacity: 0; }
+        .animate-delay-400 { animation-delay: 0.4s; opacity: 0; }
+        .animate-delay-500 { animation-delay: 0.5s; opacity: 0; }
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            padding: 14px 28px;
+            border-radius: 9999px;
+            font-size: 14px;
+            font-weight: 500;
+            opacity: 0;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 2000;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            white-space: nowrap;
+        }
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+        .toast.success {
+            background: rgba(3, 181, 211, 0.85);
+            border: 1px solid rgba(76, 215, 246, 0.4);
+            color: #fff;
+        }
+        .toast.error {
+            background: rgba(147, 0, 10, 0.85);
+            border: 1px solid rgba(255, 180, 171, 0.4);
+            color: #ffdad6;
+        }
+        .toast.info {
+            background: rgba(160, 120, 255, 0.3);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(208, 188, 255, 0.3);
+            color: #dae2fd;
+        }
+        .toast.warning {
+            background: rgba(225, 78, 246, 0.3);
+            border: 1px solid rgba(251, 171, 255, 0.3);
+            color: #ffd6fd;
+        }
+
+        /* === Mode Tab === */
+        .mode-tab {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        .mode-tab.active {
+            background: rgba(160, 120, 255, 0.15);
+            border-color: rgba(160, 120, 255, 0.3);
+            color: #d0bcff;
+        }
+        .mode-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 40%;
+            height: 2px;
+            background: linear-gradient(90deg, #a078ff, #6d3bd7);
+            border-radius: 1px;
+        }
+        .mode-tab:not(.active) {
+            background: rgba(255, 255, 255, 0.03);
+            border-color: rgba(255, 255, 255, 0.06);
+            color: rgba(203, 195, 215, 0.5);
+        }
+        .mode-tab:not(.active):hover {
+            background: rgba(255, 255, 255, 0.06);
+            color: rgba(203, 195, 215, 0.8);
+        }
+
+        /* === File Drop Zone === */
+        .drop-zone {
+            border: 2px dashed rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .drop-zone:hover,
+        .drop-zone.drag-over {
+            border-color: rgba(160, 120, 255, 0.4);
+            background: rgba(160, 120, 255, 0.05);
+        }
+        .drop-zone.has-file {
+            border-style: solid;
+            border-color: rgba(76, 215, 246, 0.3);
+            background: rgba(76, 215, 246, 0.03);
+        }
+        .drop-zone.has-file.error {
+            border-color: rgba(255, 180, 171, 0.3);
+            background: rgba(147, 0, 10, 0.1);
+        }
+
+        /* === Settings Panel === */
+        .settings-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .settings-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+        .settings-panel {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 420px;
+            max-width: 100vw;
+            height: 100vh;
+            background: rgba(11, 19, 38, 0.97);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: -10px 0 40px rgba(0, 0, 0, 0.3);
+            z-index: 1001;
+            transform: translateX(100%);
+            transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+        }
+        .settings-panel.active {
+            transform: translateX(0);
+        }
+
+        /* === Processing Steps === */
+        .step-indicator {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px 0;
+        }
+        .step-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            transition: all 0.5s ease;
+        }
+        .step-dot.pending {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .step-dot.active {
+            background: #a078ff;
+            box-shadow: 0 0 12px rgba(160, 120, 255, 0.6);
+            animation: pulseGlow 1.5s ease-in-out infinite;
+        }
+        .step-dot.done {
+            background: #4cd7f6;
+            box-shadow: 0 0 8px rgba(76, 215, 246, 0.4);
+        }
+        .step-line {
+            width: 2px;
+            height: 24px;
+            margin-left: 5px;
+            background: rgba(255, 255, 255, 0.08);
+            flex-shrink: 0;
+        }
+        .step-line.done {
+            background: #4cd7f6;
+        }
+
+        /* === Model Tag === */
+        .model-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px 6px 16px;
+            background: rgba(160, 120, 255, 0.1);
+            border: 1px solid rgba(160, 120, 255, 0.2);
+            border-radius: 9999px;
+            font-size: 13px;
+            color: #d0bcff;
+        }
+        .model-tag:hover {
+            background: rgba(160, 120, 255, 0.15);
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
+
+        /* 模型选择器 */
+        .model-select-wrapper {
+            position: relative;
+            flex: 1;
+        }
+        .model-select-wrapper::after {
+            content: 'expand_more';
+            font-family: 'Material Symbols Outlined';
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(203, 195, 215, 0.4);
+            font-size: 20px;
+            pointer-events: none;
+            transition: color 0.3s ease;
+        }
+        .model-select-wrapper:focus-within::after {
+            color: rgba(208, 188, 255, 0.6);
+        }
+        select.model-select {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 16px;
+            padding: 16px 44px 16px 18px;
+            color: #dae2fd;
+            font-size: 16px;
+            font-weight: 400;
+            line-height: 1.6;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        select.model-select:hover {
+            border-color: rgba(255, 255, 255, 0.12);
+            background: rgba(255, 255, 255, 0.08);
+        }
+        select.model-select:focus {
+            outline: none;
+            border-color: rgba(208, 188, 255, 0.3);
+            background: rgba(255, 255, 255, 0.1);
+        }
+        /* 下拉选项面板 */
+        select.model-select option {
+            background: #0f1a2e;
+            color: #dae2fd;
+            padding: 14px 18px;
+            font-size: 15px;
+            font-weight: 400;
+            letter-spacing: 0.01em;
+        }
+        select.model-select option:hover,
+        select.model-select option:focus,
+        select.model-select option:active,
+        select.model-select option:checked {
+            background: rgba(160, 120, 255, 0.2) !important;
+            color: #e9ddff;
+        }
+        /* 未选中时的占位提示 */
+        select.model-select.unselected {
+            color: rgba(203, 195, 215, 0.4);
+        }
+        /* 已选中状态的视觉强调 */
+        select.model-select:not(.unselected) {
+            color: #e9ddff;
+        }
+
+
+        /* 提示词输出区域 */
+        .prompt-area {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 16px;
+            padding: 20px;
+            min-height: 200px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Inter', monospace;
+            font-size: 14px;
+            line-height: 1.7;
+            color: #dae2fd;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            resize: none;
+            width: 100%;
+            transition: border-color 0.3s ease;
+        }
+        .prompt-area:focus {
+            outline: none;
+            border-color: rgba(208, 188, 255, 0.4);
+        }
+        .prompt-area.editable {
+            border-color: rgba(76, 215, 246, 0.3);
+            background: rgba(11, 19, 38, 0.8);
+        }
+    </style>
+</head>
+<body class="font-body-md text-body-md selection:bg-primary/30 min-h-screen">
+
+<!-- ===== Glow Background ===== -->
+<div class="glow-bg"></div>
+
+<!-- ===== Toast ===== -->
+<div class="toast" id="toast"></div>
+
+<!-- ============================================= -->
+<!-- VIEW 1: Landing / Input Page                   -->
+<!-- ============================================= -->
+<div id="landingView">
+    <!-- Minimal Header -->
+    <header class="fixed top-0 w-full z-50 flex justify-center py-8">
+        <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary text-[28px]" style="font-variation-settings: 'FILL' 1;">video_library</span>
+            <span class="font-headline-md text-headline-md font-bold tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-primary to-secondary">视频转提示词</span>
+        </div>
+    </header>
+
+    <main class="min-h-screen flex flex-col items-center justify-center px-margin-mobile md:px-margin-desktop">
+        <section class="max-w-3xl w-full text-center">
+            <!-- Hero -->
+            <h1 class="font-headline-xl text-[36px] md:text-headline-xl mb-4 tracking-tight bg-clip-text text-transparent bg-gradient-to-b from-white to-white/60 animate-fade-in-up">
+                AI 视频转提示词
+            </h1>
+            <p class="font-body-lg text-body-lg text-on-surface-variant/80 mb-10 max-w-xl mx-auto animate-fade-in-up animate-delay-100">
+                智能理解视频内容，自动生成精准的中文提示词
+            </p>
+
+            <!-- Mode Tabs -->
+            <div class="flex items-center justify-center gap-0 mb-8 animate-fade-in-up animate-delay-200">
+                <div class="inline-flex rounded-2xl p-1.5 glass-card" style="background: rgba(255,255,255,0.03);">
+                    <button class="mode-tab active px-8 py-3 rounded-xl font-label-md flex items-center gap-2 border" data-mode="url" onclick="switchInputMode('url')">
+                        <span class="material-symbols-outlined text-[20px]">link</span>
+                        URL链接
+                    </button>
+                    <button class="mode-tab px-8 py-3 rounded-xl font-label-md flex items-center gap-2 border" data-mode="upload" onclick="switchInputMode('upload')">
+                        <span class="material-symbols-outlined text-[20px]">cloud_upload</span>
+                        本地上传
+                    </button>
+                </div>
+            </div>
+
+            <!-- URL Input Section -->
+            <div id="urlInputSection" class="animate-fade-in-up animate-delay-200">
+                <div class="glass-card p-2 md:p-3 rounded-[32px] max-w-2xl mx-auto relative group mb-4">
+                    <div class="absolute -inset-2 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-[34px] blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                    <div class="relative flex flex-col md:flex-row gap-2">
+                        <div class="flex-1 relative flex items-center">
+                            <span class="material-symbols-outlined absolute left-6 text-on-surface-variant/60">smart_display</span>
+                            <input
+                                class="w-full bg-white/5 border border-white/5 rounded-[24px] py-5 pl-14 pr-6 focus:outline-none focus:border-primary/30 focus:bg-white/10 transition-all font-body-md text-body-md placeholder:text-on-surface-variant/40"
+                                placeholder="粘贴视频链接或分享文案（支持抖音、YouTube、B站等，自动识别）..."
+                                type="text"
+                                id="urlInput"
+                            />
+                        </div>
+                        <button
+                            class="primary-gradient-btn px-10 py-5 rounded-[24px] font-label-md text-[18px] text-white flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all whitespace-nowrap"
+                            id="parseBtn"
+                            onclick="submitVideoUrl()"
+                        >
+                            <span id="parseBtnText">分析视频</span>
+                            <span class="material-symbols-outlined text-[20px]" id="parseBtnIcon">auto_fix_high</span>
+                        </button>
+                    </div>
+                </div>
+                <p class="text-label-sm text-on-surface-variant/40 mt-4 flex items-center justify-center gap-2">
+                    <span class="material-symbols-outlined text-[16px]">info</span>
+                    支持 MP4、WebM、MOV 格式视频链接，或主流平台的分享链接
+                </p>
+            </div>
+
+            <!-- Upload Section -->
+            <div id="uploadSection" class="animate-fade-in-up animate-delay-200" style="display:none;">
+                <div class="max-w-2xl mx-auto">
+                    <!-- Drop Zone -->
+                    <div class="drop-zone glass-card rounded-[32px] p-12 flex flex-col items-center justify-center gap-4 transition-all" id="dropZone" onclick="document.getElementById('fileInput').click()">
+                        <div class="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center" id="dropIcon">
+                            <span class="material-symbols-outlined text-4xl text-primary/60">upload_file</span>
+                        </div>
+                        <div id="dropText">
+                            <p class="font-headline-md text-on-surface-variant/80">点击选择或拖拽视频文件</p>
+                            <p class="text-label-sm text-on-surface-variant/40 mt-1">支持 MP4、WebM、MOV 格式，最大 20MB</p>
+                        </div>
+                        <div id="fileInfo" style="display:none;" class="w-full max-w-md">
+                            <div class="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5">
+                                <div class="flex items-center gap-3 min-w-0">
+                                    <span class="material-symbols-outlined text-secondary text-2xl flex-shrink-0">video_file</span>
+                                    <div class="min-w-0 text-left">
+                                        <p class="font-label-md text-on-surface truncate" id="fileName">filename.mp4</p>
+                                        <p class="text-label-sm text-on-surface-variant/60" id="fileSize">0 MB</p>
+                                    </div>
+                                </div>
+                                <button class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-all flex-shrink-0" onclick="event.stopPropagation(); clearFile()">
+                                    <span class="material-symbols-outlined text-[18px]">close</span>
+                                </button>
+                            </div>
+                            <p class="text-label-sm text-error mt-2 hidden" id="fileSizeWarning">
+                                <span class="material-symbols-outlined text-[14px] align-middle">warning</span>
+                                文件超过 20MB 限制，建议使用 URL 链接模式
+                            </p>
+                        </div>
+                        <input type="file" id="fileInput" accept="video/mp4,video/webm,video/quicktime,video/x-msvideo,video/x-matroska" class="hidden" onchange="handleFileSelect(this.files[0])"/>
+                    </div>
+                    <!-- Submit Button -->
+                    <button
+                        class="primary-gradient-btn px-10 rounded-full font-label-md text-[15px] text-white flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all mx-auto mt-6 disabled:opacity-35 disabled:cursor-not-allowed disabled:hover:scale-100 select-none"
+                        id="uploadBtn"
+                        onclick="submitVideoFile()"
+                        disabled
+                        style="min-height:48px;"
+                    >
+                        <span class="material-symbols-outlined text-[20px]">auto_fix_high</span>
+                        上传并分析视频
+                    </button>
+                </div>
+            </div>
+
+            <!-- Quick Info -->
+            <div class="flex justify-center items-center gap-8 text-on-surface-variant/40 mt-12 animate-fade-in-up animate-delay-300">
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[18px]">psychology</span>
+                    <span class="text-label-sm uppercase tracking-widest">AI智能分析</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[18px]">translate</span>
+                    <span class="text-label-sm uppercase tracking-widest">中文输出</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-[18px]">content_paste</span>
+                    <span class="text-label-sm uppercase tracking-widest">一键复制</span>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Settings FAB -->
+    <button class="fixed bottom-8 right-8 w-14 h-14 rounded-full glass-card-strong flex items-center justify-center hover:scale-105 active:scale-95 transition-all z-40 group" onclick="toggleSettings()">
+        <span class="material-symbols-outlined text-primary group-hover:rotate-90 transition-transform duration-300">settings</span>
+    </button>
+
+    <!-- Footer -->
+    <footer class="w-full py-8 px-margin-desktop flex justify-center items-center">
+        <div class="flex flex-col items-center gap-4">
+            <div class="flex gap-8">
+                <a class="text-label-sm text-on-surface-variant/40 hover:text-primary transition-colors cursor-pointer">使用指南</a>
+                <a class="text-label-sm text-on-surface-variant/40 hover:text-primary transition-colors cursor-pointer">隐私政策</a>
+                <a class="text-label-sm text-on-surface-variant/40 hover:text-primary transition-colors cursor-pointer">关于</a>
+            </div>
+            <p class="text-[11px] text-on-surface-variant/30 uppercase tracking-[0.2em]">© 2025 视频转提示词 · AI 驱动的内容分析工具</p>
+        </div>
+    </footer>
+</div>
+
+<!-- ============================================= -->
+<!-- VIEW 2: Processing                             -->
+<!-- ============================================= -->
+<div id="processingView" style="display:none;">
+    <header class="fixed top-0 w-full z-50 flex justify-center py-8">
+        <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary text-[24px]" style="font-variation-settings: 'FILL' 1;">video_library</span>
+            <span class="font-headline-md text-headline-md font-bold text-on-surface">视频转提示词</span>
+        </div>
+    </header>
+
+    <main class="min-h-screen flex items-center justify-center px-margin-mobile md:px-margin-desktop">
+        <div class="max-w-lg w-full">
+            <div class="glass-card-strong rounded-[32px] p-10 text-center" style="animation: pulseGlow 2s ease-in-out infinite;">
+                <div class="w-20 h-20 rounded-full bg-primary/20 flex items-center justify-center mx-auto mb-6">
+                    <span class="spinner !w-10 !h-10 !border-[3px]"></span>
+                </div>
+                <h2 class="font-headline-lg text-headline-lg mb-2">AI 正在分析视频</h2>
+                <p class="text-on-surface-variant/60 mb-8">请耐心等待，根据视频长度可能需要 10-60 秒</p>
+
+                <!-- Steps -->
+                <div class="max-w-xs mx-auto text-left">
+                    <div class="step-indicator" id="step1">
+                        <div class="step-dot active" id="step1Dot"></div>
+                        <div>
+                            <p class="font-label-md text-on-surface" id="step1Text">分析视频内容...</p>
+                            <p class="text-label-sm text-on-surface-variant/50">提取视觉元素、场景、动作等信息</p>
+                        </div>
+                    </div>
+                    <div class="step-line ml-[5px]" id="step1Line"></div>
+                    <div class="step-indicator" id="step2">
+                        <div class="step-dot pending" id="step2Dot"></div>
+                        <div>
+                            <p class="font-label-md text-on-surface-variant/50" id="step2Text">生成中文提示词...</p>
+                            <p class="text-label-sm text-on-surface-variant/50">优化输出为精准的提示词</p>
+                        </div>
+                    </div>
+                </div>
+
+                <button class="mt-10 text-label-sm text-on-surface-variant/40 hover:text-error transition-colors flex items-center gap-1 mx-auto" onclick="cancelProcessing()">
+                    <span class="material-symbols-outlined text-[16px]">close</span>
+                    取消处理
+                </button>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- ============================================= -->
+<!-- VIEW 3: Result Page                            -->
+<!-- ============================================= -->
+<div id="resultView" style="display:none;">
+    <!-- Nav Header -->
+    <header class="fixed top-0 w-full z-50 nav-blur">
+        <div class="max-w-[1440px] mx-auto px-margin-desktop py-4 flex justify-between items-center">
+            <div class="flex items-center gap-2 cursor-pointer" onclick="showLanding()">
+                <span class="material-symbols-outlined text-primary text-[24px]" style="font-variation-settings: 'FILL' 1;">video_library</span>
+                <span class="font-headline-md text-headline-md font-bold text-on-surface bg-clip-text bg-gradient-to-r from-primary to-secondary">视频转提示词</span>
+            </div>
+            <div class="flex items-center gap-4">
+                <button class="font-label-sm text-on-surface-variant hover:text-on-surface transition-colors cursor-pointer hidden md:flex items-center gap-1" onclick="toggleSettings()">
+                    <span class="material-symbols-outlined text-[18px]">settings</span>
+                    设置
+                </button>
+                <button class="bg-gradient-to-r from-primary-container to-secondary-container text-on-primary-container font-label-md px-6 py-2 rounded-full hover:scale-95 transition-all duration-200 primary-glow" onclick="showLanding()">
+                    继续处理
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow pt-28 pb-section-gap px-margin-mobile md:px-margin-desktop">
+        <div class="max-w-5xl mx-auto">
+            <!-- Success Banner -->
+            <div class="text-center mb-8 animate-fade-in-up">
+                <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-secondary-container/20 text-secondary mb-4 glass-card border-none">
+                    <span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+                </div>
+                <h1 class="font-headline-lg text-headline-lg mb-1">提示词生成完毕</h1>
+                <p class="text-on-surface-variant/70" id="resultSubtitle">AI 已分析视频内容并生成了以下中文提示词</p>
+            </div>
+
+            <!-- Main Result Layout -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fade-in-up animate-delay-100">
+                <!-- Left: Video Info -->
+                <div class="lg:col-span-1">
+                    <div class="glass-card rounded-2xl p-6 h-full">
+                        <h2 class="font-headline-md text-headline-md mb-6 flex items-center gap-2">
+                            <span class="material-symbols-outlined text-secondary">info</span>
+                            视频信息
+                        </h2>
+                        <div class="space-y-4" id="resultMeta">
+                            <div class="flex items-center gap-4 p-4 rounded-xl bg-white/5" id="resultVideoInfo">
+                                <span class="material-symbols-outlined text-3xl text-primary/50">smart_display</span>
+                                <div class="min-w-0">
+                                    <p class="font-label-md text-on-surface truncate" id="resultFileName">video.mp4</p>
+                                    <p class="text-label-sm text-on-surface-variant/60" id="resultFileMeta">--</p>
+                                </div>
+                            </div>
+                            <div class="flex justify-between items-center py-3 border-b border-white/5">
+                                <span class="text-label-sm text-on-surface-variant">输入方式</span>
+                                <span class="font-label-md text-secondary" id="resultInputType">--</span>
+                            </div>
+                            <div class="flex justify-between items-center py-3 border-b border-white/5">
+                                <span class="text-label-sm text-on-surface-variant">AI 模型</span>
+                                <span class="font-label-md" id="resultModel">--</span>
+                            </div>
+                            <div class="flex justify-between items-center py-3 border-b border-white/5">
+                                <span class="text-label-sm text-on-surface-variant">Token 消耗</span>
+                                <span class="font-label-md" id="resultTokens">--</span>
+                            </div>
+                            <div class="flex justify-between items-center py-3">
+                                <span class="text-label-sm text-on-surface-variant">处理耗时</span>
+                                <span class="font-label-md" id="resultDuration">--</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Prompt Result -->
+                <div class="lg:col-span-2">
+                    <div class="glass-card-strong rounded-2xl overflow-hidden">
+                        <!-- Prompt Header -->
+                        <div class="flex items-center justify-between px-6 py-4 border-b border-white/5">
+                            <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-primary">prompt_suggestion</span>
+                                <span class="font-label-md">生成提示词</span>
+                            </div>
+                            <div class="flex items-center gap-1.5">
+                                <button class="px-3.5 py-2 rounded-full bg-white/[0.04] border border-white/[0.06] text-label-sm flex items-center gap-1.5 hover:bg-white/[0.08] hover:border-white/[0.12] active:scale-95 transition-all select-none" id="editBtn" onclick="toggleEditPrompt()">
+                                    <span class="material-symbols-outlined text-[16px]">edit</span>
+                                    <span class="hidden sm:inline">编辑</span>
+                                </button>
+                                <button class="px-3.5 py-2 rounded-full bg-white/[0.04] border border-white/[0.06] text-label-sm flex items-center gap-1.5 hover:bg-white/[0.08] hover:border-white/[0.12] active:scale-95 transition-all select-none" onclick="copyPrompt()">
+                                    <span class="material-symbols-outlined text-[16px]">content_copy</span>
+                                    <span class="hidden sm:inline">复制</span>
+                                </button>
+                                <button class="px-3.5 py-2 rounded-full bg-white/[0.04] border border-white/[0.06] text-label-sm flex items-center gap-1.5 hover:bg-white/[0.08] hover:border-white/[0.12] active:scale-95 transition-all select-none" onclick="regeneratePrompt()">
+                                    <span class="material-symbols-outlined text-[16px]">refresh</span>
+                                    <span class="hidden sm:inline">重新生成</span>
+                                </button>
+                            </div>
+                        </div>
+                        <!-- Prompt Content -->
+                        <div class="p-6">
+                            <textarea class="prompt-area" id="promptResult" readonly>等待生成...</textarea>
+                        </div>
+                        <!-- Footer Actions -->
+                        <div class="flex items-center justify-between px-6 py-4 border-t border-white/[0.04] bg-white/[0.01]">
+                            <span class="text-label-sm text-on-surface-variant/40 select-none" id="promptCharCount">0 字符</span>
+                            <div class="flex gap-2">
+                                <button class="px-4 py-2 rounded-full bg-white/[0.04] border border-white/[0.06] text-label-sm flex items-center gap-1.5 hover:bg-white/[0.08] hover:border-white/[0.12] active:scale-95 transition-all select-none" onclick="copyPrompt()">
+                                    <span class="material-symbols-outlined text-[16px]">content_copy</span>
+                                    复制到剪贴板
+                                </button>
+                                <button class="px-4 py-2 rounded-full bg-gradient-to-r from-primary-container/20 to-secondary-container/20 border border-primary/15 text-label-sm flex items-center gap-1.5 hover:from-primary-container/35 hover:border-primary/30 active:scale-95 transition-all primary-glow select-none" onclick="showLanding()">
+                                    <span class="material-symbols-outlined text-[16px]">add</span>
+                                    新建分析
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tips -->
+            <div class="mt-10 grid grid-cols-1 md:grid-cols-3 gap-4 animate-fade-in-up animate-delay-300">
+                <div class="glass-card p-5 rounded-xl flex items-start gap-3">
+                    <span class="material-symbols-outlined text-secondary text-xl">lightbulb</span>
+                    <div>
+                        <p class="font-label-md text-on-surface text-sm">提示词可编辑</p>
+                        <p class="text-label-sm text-on-surface-variant/60">点击「编辑」按钮可对生成的提示词进行手动调整。</p>
+                    </div>
+                </div>
+                <div class="glass-card p-5 rounded-xl flex items-start gap-3">
+                    <span class="material-symbols-outlined text-secondary text-xl">tune</span>
+                    <div>
+                        <p class="font-label-md text-on-surface text-sm">不同模型效果不同</p>
+                        <p class="text-label-sm text-on-surface-variant/60">在设置中切换不同 AI 模型以获得更优结果。</p>
+                    </div>
+                </div>
+                <div class="glass-card p-5 rounded-xl flex items-start gap-3">
+                    <span class="material-symbols-outlined text-secondary text-xl">repeat</span>
+                    <div>
+                        <p class="font-label-md text-on-surface text-sm">支持重新生成</p>
+                        <p class="text-label-sm text-on-surface-variant/60">对结果不满意可点击「重新生成」获取新结果。</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="w-full py-10 px-margin-desktop flex flex-col md:flex-row justify-between items-center gap-stack-gap border-t border-white/5">
+        <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary text-[20px]" style="font-variation-settings: 'FILL' 1;">video_library</span>
+            <span class="font-headline-md text-headline-md text-on-surface">视频转提示词</span>
+        </div>
+        <div class="flex flex-wrap justify-center gap-8 text-on-surface-variant font-label-sm text-label-sm">
+            © 2025 视频转提示词 · AI 驱动的内容分析工具
+        </div>
+    </footer>
+</div>
+
+<!-- ============================================= -->
+<!-- Settings Panel                                 -->
+<!-- ============================================= -->
+<div class="settings-overlay" id="settingsOverlay" onclick="toggleSettings()"></div>
+<div class="settings-panel" id="settingsPanel">
+    <!-- Header -->
+    <div class="flex items-center justify-between px-6 py-5 border-b border-white/10">
+        <div class="flex items-center gap-3">
+            <span class="material-symbols-outlined text-primary">settings</span>
+            <span class="font-headline-md text-headline-md">API 设置</span>
+        </div>
+        <button class="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 hover:rotate-90 transition-all" onclick="toggleSettings()">
+            <span class="material-symbols-outlined text-[20px]">close</span>
+        </button>
+    </div>
+
+    <!-- Body -->
+    <div class="flex-1 overflow-y-auto px-6 py-6 space-y-6">
+        <!-- API Base URL -->
+        <div>
+            <label class="text-label-sm uppercase tracking-[0.04em] text-on-surface-variant/50 block mb-2 select-none">API 地址</label>
+            <input class="w-full bg-white/5 border border-white/5 rounded-[16px] py-4 px-5 focus:outline-none focus:border-primary/30 focus:bg-white/10 transition-all text-[16px] placeholder:text-on-surface-variant/40 text-on-surface" type="text" id="apiBaseUrl" placeholder="https://generativelanguage.googleapis.com" value="https://generativelanguage.googleapis.com"/>
+            <p class="text-[11px] text-on-surface-variant/30 mt-1.5">Google Gemini API 的基础地址</p>
+        </div>
+
+        <!-- API Key -->
+        <div>
+            <label class="text-label-sm uppercase tracking-[0.04em] text-on-surface-variant/50 block mb-2 select-none">API 密钥</label>
+            <div class="relative">
+                <input class="w-full bg-white/5 border border-white/5 rounded-[16px] py-4 pr-12 pl-5 focus:outline-none focus:border-primary/30 focus:bg-white/10 transition-all text-[16px] placeholder:text-on-surface-variant/40 text-on-surface" type="password" id="apiKey" placeholder="输入您的 API 密钥"/>
+                <button class="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant/40 hover:text-on-surface-variant/80 transition-colors select-none" onclick="toggleKeyVisibility()">
+                    <span class="material-symbols-outlined text-[20px]" id="keyVisibilityIcon">visibility</span>
+                </button>
+            </div>
+            <p class="text-[11px] text-on-surface-variant/30 mt-1.5">密钥仅存储在本地浏览器中</p>
+        </div>
+
+        <!-- Model Selector -->
+        <div>
+            <label class="text-label-sm uppercase tracking-[0.04em] text-on-surface-variant/50 block mb-2 select-none">AI 模型</label>
+            <div class="flex gap-2 mb-3">
+                <div class="model-select-wrapper">
+                    <select class="model-select unselected" id="modelSelect">
+                        <option value="" disabled selected>选择 AI 模型...</option>
+                    </select>
+                </div>
+                <button class="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center hover:bg-primary/20 transition-all flex-shrink-0 hover:scale-105 active:scale-95" onclick="addModel()" title="添加模型">
+                    <span class="material-symbols-outlined text-primary">add</span>
+                </button>
+            </div>
+            <div class="flex flex-wrap gap-2" id="modelTags"></div>
+            <p class="text-[11px] text-on-surface-variant/30 mt-1.5">点击 &#xFF0B; 添加新模型，点击标签 &#x2715; 删除</p>
+        </div>
+
+        <!-- Generation Config -->
+        <div>
+            <label class="text-label-sm uppercase tracking-[0.04em] text-on-surface-variant/50 block mb-3 select-none">生成参数</label>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="text-[11px] text-on-surface-variant/35 block mb-1.5">Temperature</label>
+                    <input class="w-full bg-white/5 border border-white/5 rounded-[16px] py-4 px-5 focus:outline-none focus:border-primary/30 focus:bg-white/10 transition-all text-[16px] text-on-surface" type="number" id="apiTemperature" value="0.4" step="0.1" min="0" max="2"/>
+                </div>
+                <div>
+                    <label class="text-[11px] text-on-surface-variant/35 block mb-1.5">Max Tokens</label>
+                    <input class="w-full bg-white/5 border border-white/5 rounded-[16px] py-4 px-5 focus:outline-none focus:border-primary/30 focus:bg-white/10 transition-all text-[16px] text-on-surface" type="number" id="apiMaxTokens" value="2048" step="256" min="256" max="8192"/>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="px-6 py-5 border-t border-white/10">
+        <button class="primary-gradient-btn w-full rounded-xl font-label-md text-[15px] text-white flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-[0.99] transition-all select-none" onclick="saveApiSettings()" style="min-height:48px;">
+            <span class="material-symbols-outlined text-[20px]">save</span>
+            保存设置
+        </button>
+    </div>
+</div>
+
+<!-- ============================================= -->
+<!-- JavaScript                                     -->
+<!-- ============================================= -->
+<script>
+    // ========== Constants ==========
+    const STORAGE_KEYS = {
+        API_KEY: 'v2p_api_key',
+        BASE_URL: 'v2p_base_url',
+        MODELS: 'v2p_models',
+        SELECTED_MODEL: 'v2p_selected_model',
+        TEMPERATURE: 'v2p_temperature',
+        MAX_TOKENS: 'v2p_max_tokens'
+    };
+
+    const DEFAULT_MODELS = [
+        'gemini-2.0-flash',
+        'gemini-2.0-flash-lite',
+        'gemini-1.5-flash',
+        'gemini-1.5-pro',
+        'gemini-2.5-pro-exp-03-25'
+    ];
+
+    const VIDEO_EXTENSIONS = ['.mp4', '.webm', '.mov', '.avi', '.mkv', '.m4v', '.3gp'];
+    const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
+    const SYSTEM_PROMPT = `你是一个专业的视频内容分析助手。请详细分析用户提供的视频，并生成一段高质量的中文提示词。
+
+分析要求：
+1. 描述视频中的场景、环境、人物、物体等视觉元素
+2. 分析人物的动作、表情、互动
+3. 描述拍摄手法、构图、光线和色彩风格
+4. 识别视频的情绪氛围和风格特点
+5. 如存在音频，描述音频内容和背景音乐
+
+提示词输出要求：
+- 全程使用中文
+- 以"【视频提示词】"开头
+- 包含：主体描述、场景环境、动作动态、光线氛围、色彩风格、镜头语言
+- 长度在 100-300 字之间
+- 语言精炼、富有画面感，可直接用于 AI 视频生成工具`;
+
+    // ========== State ==========
+    const APP_STATE = {
+        apiConfig: {
+            baseUrl: 'https://generativelanguage.googleapis.com',
+            apiKey: '',
+            models: [...DEFAULT_MODELS],
+            selectedModel: '',  // Empty until user selects
+            temperature: 0.4,
+            maxOutputTokens: 2048
+        },
+        inputMode: 'url',
+        videoFile: null,
+        videoFileName: '',
+        videoFileSize: 0,
+        processingStartTime: 0,
+        isProcessing: false
+    };
+
+    let isEditingPrompt = false;
+
+    // ========== Toast ==========
+    function showToast(message, type = 'info') {
+        const toast = document.getElementById('toast');
+        toast.textContent = message;
+        toast.className = `toast ${type} show`;
+        clearTimeout(toast._timeout);
+        toast._timeout = setTimeout(() => {
+            toast.classList.remove('show');
+        }, 3000);
+    }
+
+    // ========== Config Persistence ==========
+    function loadConfig() {
+        const key = localStorage.getItem(STORAGE_KEYS.API_KEY);
+        const baseUrl = localStorage.getItem(STORAGE_KEYS.BASE_URL);
+        const modelsRaw = localStorage.getItem(STORAGE_KEYS.MODELS);
+        const selectedModel = localStorage.getItem(STORAGE_KEYS.SELECTED_MODEL);
+        const temp = localStorage.getItem(STORAGE_KEYS.TEMPERATURE);
+        const maxTokens = localStorage.getItem(STORAGE_KEYS.MAX_TOKENS);
+
+        if (key) APP_STATE.apiConfig.apiKey = key;
+        if (baseUrl) APP_STATE.apiConfig.baseUrl = baseUrl;
+        if (modelsRaw) {
+            try {
+                const parsed = JSON.parse(modelsRaw);
+                if (Array.isArray(parsed) && parsed.length > 0) {
+                    APP_STATE.apiConfig.models = parsed;
+                }
+            } catch (e) {}
+        }
+        if (selectedModel && APP_STATE.apiConfig.models.includes(selectedModel)) {
+            APP_STATE.apiConfig.selectedModel = selectedModel;
+        } else {
+            // No previously selected model — leave empty until user picks
+            APP_STATE.apiConfig.selectedModel = '';
+        }
+        if (temp) {
+            const t = parseFloat(temp);
+            if (!isNaN(t)) APP_STATE.apiConfig.temperature = t;
+        }
+        if (maxTokens) {
+            const m = parseInt(maxTokens);
+            if (!isNaN(m)) APP_STATE.apiConfig.maxOutputTokens = m;
+        }
+    }
+
+    function saveConfig() {
+        localStorage.setItem(STORAGE_KEYS.API_KEY, APP_STATE.apiConfig.apiKey);
+        localStorage.setItem(STORAGE_KEYS.BASE_URL, APP_STATE.apiConfig.baseUrl);
+        localStorage.setItem(STORAGE_KEYS.MODELS, JSON.stringify(APP_STATE.apiConfig.models));
+        localStorage.setItem(STORAGE_KEYS.SELECTED_MODEL, APP_STATE.apiConfig.selectedModel);
+        localStorage.setItem(STORAGE_KEYS.TEMPERATURE, APP_STATE.apiConfig.temperature.toString());
+        localStorage.setItem(STORAGE_KEYS.MAX_TOKENS, APP_STATE.apiConfig.maxOutputTokens.toString());
+    }
+
+    function syncSettingsUI() {
+        document.getElementById('apiBaseUrl').value = APP_STATE.apiConfig.baseUrl;
+        document.getElementById('apiKey').value = APP_STATE.apiConfig.apiKey;
+        document.getElementById('apiTemperature').value = APP_STATE.apiConfig.temperature;
+        document.getElementById('apiMaxTokens').value = APP_STATE.apiConfig.maxOutputTokens;
+        renderModelSelect();
+    }
+
+    // ========== Settings Panel ==========
+    function toggleSettings() {
+        const overlay = document.getElementById('settingsOverlay');
+        const panel = document.getElementById('settingsPanel');
+        const isOpen = overlay.classList.contains('active');
+
+        if (isOpen) {
+            overlay.classList.remove('active');
+            panel.classList.remove('active');
+            document.body.style.overflow = '';
+        } else {
+            syncSettingsUI();
+            overlay.classList.add('active');
+            panel.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+    }
+
+    function toggleKeyVisibility() {
+        const input = document.getElementById('apiKey');
+        const icon = document.getElementById('keyVisibilityIcon');
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.textContent = 'visibility_off';
+        } else {
+            input.type = 'password';
+            icon.textContent = 'visibility';
+        }
+    }
+
+    function saveApiSettings() {
+        APP_STATE.apiConfig.baseUrl = document.getElementById('apiBaseUrl').value.trim().replace(/\/+$/, '');
+        APP_STATE.apiConfig.apiKey = document.getElementById('apiKey').value.trim();
+        APP_STATE.apiConfig.temperature = parseFloat(document.getElementById('apiTemperature').value) || 0.4;
+        APP_STATE.apiConfig.maxOutputTokens = parseInt(document.getElementById('apiMaxTokens').value) || 2048;
+
+        // Ensure a model is selected if available
+        const select = document.getElementById('modelSelect');
+        if (select.value) {
+            APP_STATE.apiConfig.selectedModel = select.value;
+        } else if (APP_STATE.apiConfig.models.length > 0) {
+            APP_STATE.apiConfig.selectedModel = APP_STATE.apiConfig.models[0];
+            select.value = APP_STATE.apiConfig.models[0];
+            select.classList.remove('unselected');
+        }
+
+        if (!APP_STATE.apiConfig.apiKey) {
+            showToast('请输入 API 密钥', 'warning');
+            return;
+        }
+        if (!APP_STATE.apiConfig.baseUrl) {
+            showToast('请输入 API 地址', 'warning');
+            return;
+        }
+        if (!APP_STATE.apiConfig.selectedModel) {
+            showToast('请至少添加一个 AI 模型', 'warning');
+            return;
+        }
+
+        saveConfig();
+        showToast('设置已保存', 'success');
+        toggleSettings();
+    }
+
+    // ========== Model Manager ==========
+    function renderModelSelect() {
+        const select = document.getElementById('modelSelect');
+        const tags = document.getElementById('modelTags');
+        const selected = APP_STATE.apiConfig.selectedModel;
+
+        // Preserve the placeholder option, rebuild the rest
+        select.innerHTML = '<option value="" disabled>选择 AI 模型...</option>';
+        APP_STATE.apiConfig.models.forEach(m => {
+            const opt = document.createElement('option');
+            opt.value = m;
+            opt.textContent = m;
+            select.appendChild(opt);
+        });
+
+        // Set selected value and update visual state
+        if (selected && APP_STATE.apiConfig.models.includes(selected)) {
+            select.value = selected;
+            select.classList.remove('unselected');
+        } else {
+            select.value = '';
+            select.classList.add('unselected');
+        }
+
+        tags.innerHTML = '';
+        APP_STATE.apiConfig.models.forEach(m => {
+            const tag = document.createElement('span');
+            tag.className = 'model-tag group';
+            tag.innerHTML = `${m} <span class="material-symbols-outlined text-[14px] cursor-pointer hover:text-error transition-colors" onclick="removeModel('${m}')">close</span>`;
+            tags.appendChild(tag);
+        });
+
+        // Sync selected model on change
+        select.onchange = function() {
+            if (this.value) {
+                APP_STATE.apiConfig.selectedModel = this.value;
+                localStorage.setItem(STORAGE_KEYS.SELECTED_MODEL, this.value);
+                this.classList.remove('unselected');
+            }
+        };
+    }
+
+    function getSelectedModel() {
+        const select = document.getElementById('modelSelect');
+        return select.value || (APP_STATE.apiConfig.models.length > 0 ? APP_STATE.apiConfig.models[0] : '');
+    }
+
+    function addModel() {
+        const name = prompt('输入模型名称：');
+        if (!name || !name.trim()) return;
+        const trimmed = name.trim();
+        if (APP_STATE.apiConfig.models.includes(trimmed)) {
+            showToast('模型已存在', 'warning');
+            return;
+        }
+        APP_STATE.apiConfig.models.push(trimmed);
+        APP_STATE.apiConfig.selectedModel = trimmed;
+        saveConfig();
+        renderModelSelect();
+        showToast(`已添加模型: ${trimmed}`, 'success');
+    }
+
+    function removeModel(name) {
+        if (APP_STATE.apiConfig.models.length <= 1) {
+            showToast('至少需要保留一个模型', 'warning');
+            return;
+        }
+        APP_STATE.apiConfig.models = APP_STATE.apiConfig.models.filter(m => m !== name);
+        if (APP_STATE.apiConfig.selectedModel === name) {
+            APP_STATE.apiConfig.selectedModel = APP_STATE.apiConfig.models[0];
+        }
+        saveConfig();
+        renderModelSelect();
+        showToast(`已删除模型: ${name}`, 'info');
+    }
+
+    // ========== View Switching ==========
+    function showLanding() {
+        document.getElementById('resultView').style.display = 'none';
+        document.getElementById('processingView').style.display = 'none';
+        document.getElementById('landingView').style.display = 'block';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function showProcessing() {
+        document.getElementById('landingView').style.display = 'none';
+        document.getElementById('resultView').style.display = 'none';
+        document.getElementById('processingView').style.display = 'block';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+
+        // Reset steps
+        document.getElementById('step1Dot').className = 'step-dot active';
+        document.getElementById('step2Dot').className = 'step-dot pending';
+        document.getElementById('step1Line').className = 'step-line';
+        document.getElementById('step1Text').className = 'font-label-md text-on-surface';
+        document.getElementById('step2Text').className = 'font-label-md text-on-surface-variant/50';
+
+        APP_STATE.processingStartTime = Date.now();
+        APP_STATE.isProcessing = true;
+    }
+
+    function showResult() {
+        document.getElementById('processingView').style.display = 'none';
+        document.getElementById('resultView').style.display = 'block';
+        document.getElementById('landingView').style.display = 'none';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        APP_STATE.isProcessing = false;
+    }
+
+    function cancelProcessing() {
+        APP_STATE.isProcessing = false;
+        showLanding();
+        showToast('已取消处理', 'info');
+    }
+
+    // ========== Input Mode ==========
+    function switchInputMode(mode) {
+        APP_STATE.inputMode = mode;
+        document.querySelectorAll('.mode-tab').forEach(tab => {
+            tab.classList.toggle('active', tab.dataset.mode === mode);
+        });
+        document.getElementById('urlInputSection').style.display = mode === 'url' ? 'block' : 'none';
+        document.getElementById('uploadSection').style.display = mode === 'upload' ? 'block' : 'none';
+    }
+
+    // ========== File Upload ==========
+    function handleFileSelect(file) {
+        if (!file) return;
+
+        APP_STATE.videoFile = file;
+        APP_STATE.videoFileName = file.name;
+        APP_STATE.videoFileSize = file.size;
+
+        const dropZone = document.getElementById('dropZone');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        const fileSizeWarning = document.getElementById('fileSizeWarning');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const dropIcon = document.getElementById('dropIcon');
+        const dropText = document.getElementById('dropText');
+
+        fileName.textContent = file.name;
+        fileSize.textContent = formatBytes(file.size);
+
+        const isValidSize = file.size <= MAX_FILE_SIZE;
+        const isValidType = isSupportedVideoType(file.name);
+
+        if (!isValidType) {
+            showToast('不支持的文件格式，请上传 MP4/WebM/MOV 视频', 'error');
+            clearFile();
+            return;
+        }
+
+        if (isValidSize) {
+            fileSizeWarning.classList.add('hidden');
+            dropZone.className = 'drop-zone glass-card rounded-[32px] p-12 flex flex-col items-center justify-center gap-4 transition-all has-file';
+            uploadBtn.disabled = false;
+        } else {
+            fileSizeWarning.classList.remove('hidden');
+            dropZone.className = 'drop-zone glass-card rounded-[32px] p-12 flex flex-col items-center justify-center gap-4 transition-all has-file error';
+            uploadBtn.disabled = true;
+        }
+
+        fileInfo.style.display = 'block';
+        dropIcon.classList.add('hidden');
+        dropText.classList.add('hidden');
+    }
+
+    function clearFile() {
+        APP_STATE.videoFile = null;
+        APP_STATE.videoFileName = '';
+        APP_STATE.videoFileSize = 0;
+        document.getElementById('fileInput').value = '';
+
+        const dropZone = document.getElementById('dropZone');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileSizeWarning = document.getElementById('fileSizeWarning');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const dropIcon = document.getElementById('dropIcon');
+        const dropText = document.getElementById('dropText');
+
+        fileInfo.style.display = 'none';
+        fileSizeWarning.classList.add('hidden');
+        dropIcon.classList.remove('hidden');
+        dropText.classList.remove('hidden');
+        dropZone.className = 'drop-zone glass-card rounded-[32px] p-12 flex flex-col items-center justify-center gap-4 transition-all';
+        uploadBtn.disabled = true;
+    }
+
+    function isSupportedVideoType(filename) {
+        const ext = '.' + filename.split('.').pop().toLowerCase();
+        return VIDEO_EXTENSIONS.includes(ext);
+    }
+
+    function formatBytes(bytes) {
+        if (bytes === 0) return '0 B';
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    }
+
+    // ========== URL Detection ==========
+    function isDirectVideoUrl(url) {
+        try {
+            const u = new URL(url);
+            const path = u.pathname.toLowerCase();
+            return VIDEO_EXTENSIONS.some(ext => path.endsWith(ext));
+        } catch (e) {
+            return false;
+        }
+    }
+
+    function getMimeTypeFromUrl(url) {
+        const ext = '.' + url.split('.').pop().toLowerCase().split('?')[0];
+        const map = {
+            '.mp4': 'video/mp4',
+            '.webm': 'video/webm',
+            '.mov': 'video/quicktime',
+            '.avi': 'video/x-msvideo',
+            '.mkv': 'video/x-matroska',
+            '.m4v': 'video/mp4',
+            '.3gp': 'video/3gpp'
+        };
+        return map[ext] || 'video/mp4';
+    }
+
+    function getMimeTypeFromFile(file) {
+        return file.type || 'video/mp4';
+    }
+
+    // ========== URL Extraction ==========
+    // 从任意文本中提取 URL（支持抖音分享文案、中文混合文本等）
+    function extractUrl(text) {
+        if (!text) return null;
+        text = text.trim();
+
+        // 1. 如果整个文本就是一个合法 URL，直接返回
+        try {
+            new URL(text);
+            return text;
+        } catch (_) {}
+
+        // 2. 用正则从混合文本中提取 URL（支持 http/https，尾部智能截断）
+        const patterns = [
+            // 标准 https?:// URL
+            /https?:\/\/[^\s\u4e00-\u9fff\u3000-\u303f\uff00-\uffef]*[^\s\u4e00-\u9fff\u3000-\u303f\uff00-\uffef.,;:!?)\]}'"）】》>]+/g,
+            // 抖音短链接 v.douyin.com/xxx（可能出现在中文中间）
+            /[a-zA-Z0-9][-a-zA-Z0-9]*(\.[a-zA-Z0-9][-a-zA-Z0-9]*)+(\/[^\s\u4e00-\u9fff]*[^\s\u4e00-\u9fff.,;:!?)\]}'"）】》>]+)?/g
+        ];
+
+        let bestUrl = null;
+        for (const pattern of patterns) {
+            const matches = text.match(pattern);
+            if (matches) {
+                for (const m of matches) {
+                    // 清理尾部非法字符
+                    let clean = m.replace(/[,;:!?)\]}'"）】》>\s]+$/, '');
+                    // 补全协议
+                    if (!/^https?:\/\//i.test(clean) && clean.includes('.')) {
+                        clean = 'https://' + clean;
+                    }
+                    try {
+                        const parsed = new URL(clean);
+                        // 优先选包含视频特征域名的
+                        const host = parsed.hostname;
+                        const isVideo = ['douyin.com','tiktok.com','youtube.com','youtu.be','bilibili.com','b23.tv',
+                                         'vimeo.com','ixigua.com','kuaishou.com'].some(d => host.includes(d));
+                        if (isVideo) return clean;
+                        if (!bestUrl) bestUrl = clean;
+                    } catch (_) {}
+                }
+            }
+        }
+        return bestUrl;
+    }
+
+    // ========== Main Action: Submit Video URL ==========
+    async function submitVideoUrl() {
+        const urlInput = document.getElementById('urlInput');
+        const rawText = urlInput.value.trim();
+
+        if (!rawText) {
+            showToast('请输入视频链接或分享文案', 'error');
+            return;
+        }
+
+        // 从用户输入中提取链接（支持抖音分享文案、中文混合文本）
+        const url = extractUrl(rawText);
+        if (!url) {
+            showToast('未识别到有效链接，请检查输入内容', 'error');
+            return;
+        }
+
+        if (!APP_STATE.apiConfig.apiKey) {
+            showToast('请先在设置中配置 API 密钥', 'warning');
+            syncSettingsUI();
+            toggleSettings();
+            return;
+        }
+
+        if (!getSelectedModel()) {
+            showToast('请先在设置中选择 AI 模型', 'warning');
+            syncSettingsUI();
+            toggleSettings();
+            return;
+        }
+
+        // Show processing
+        showProcessing();
+        advanceStep1();
+
+        try {
+            const mimeType = isDirectVideoUrl(url) ? getMimeTypeFromUrl(url) : 'video/mp4';
+            const payload = {
+                contents: [{
+                    parts: [
+                        { fileData: { fileUri: url, mimeType: mimeType } },
+                        { text: SYSTEM_PROMPT }
+                    ]
+                }],
+                generationConfig: {
+                    temperature: APP_STATE.apiConfig.temperature,
+                    topP: 0.9,
+                    maxOutputTokens: APP_STATE.apiConfig.maxOutputTokens
+                }
+            };
+
+            const result = await callGeminiAPI(payload);
+            advanceStep2();
+            const displayName = url.length > 50 ? url.substring(0, 47) + '...' : url;
+            displayResult(result, { name: displayName, type: 'URL 链接', model: getSelectedModel() });
+            showResult();
+
+        } catch (error) {
+            handleApiError(error);
+        }
+    }
+
+    // ========== Main Action: Submit Video File ==========
+    async function submitVideoFile() {
+        if (!APP_STATE.videoFile) {
+            showToast('请先选择视频文件', 'error');
+            return;
+        }
+
+        if (!APP_STATE.apiConfig.apiKey) {
+            showToast('请先在设置中配置 API 密钥', 'warning');
+            syncSettingsUI();
+            toggleSettings();
+            return;
+        }
+
+        if (!getSelectedModel()) {
+            showToast('请先在设置中选择 AI 模型', 'warning');
+            syncSettingsUI();
+            toggleSettings();
+            return;
+        }
+
+        showProcessing();
+        advanceStep1();
+
+        try {
+            const base64 = await fileToBase64(APP_STATE.videoFile);
+            const mimeType = getMimeTypeFromFile(APP_STATE.videoFile);
+
+            const payload = {
+                contents: [{
+                    parts: [
+                        { inlineData: { mimeType: mimeType, data: base64 } },
+                        { text: SYSTEM_PROMPT }
+                    ]
+                }],
+                generationConfig: {
+                    temperature: APP_STATE.apiConfig.temperature,
+                    topP: 0.9,
+                    maxOutputTokens: APP_STATE.apiConfig.maxOutputTokens
+                }
+            };
+
+            const result = await callGeminiAPI(payload);
+            advanceStep2();
+            displayResult(result, {
+                name: APP_STATE.videoFileName,
+                type: '本地上传',
+                size: APP_STATE.videoFileSize,
+                model: getSelectedModel()
+            });
+            showResult();
+
+        } catch (error) {
+            handleApiError(error);
+        }
+    }
+
+    // ========== File to Base64 ==========
+    function fileToBase64(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => {
+                const base64 = reader.result.split(',')[1];
+                resolve(base64);
+            };
+            reader.onerror = () => reject(new Error('文件读取失败'));
+            reader.readAsDataURL(file);
+        });
+    }
+
+    // ========== Gemini API Call ==========
+    // 内置 CORS 代理支持：直连失败后自动尝试 corsproxy.io
+    async function callGeminiAPI(payload) {
+        const model = getSelectedModel();
+        if (!model) {
+            throw new ApiError('请先选择 AI 模型', 'NO_MODEL');
+        }
+        const baseUrl = APP_STATE.apiConfig.baseUrl.replace(/\/+$/, '');
+        const apiPath = `/v1beta/models/${model}:generateContent`;
+        const directUrl = `${baseUrl}${apiPath}`;
+        const apiKey = APP_STATE.apiConfig.apiKey;
+        const headers = {
+            'Content-Type': 'application/json',
+            'x-goog-api-key': apiKey
+        };
+
+        // 策略 1：直连
+        let response = await tryFetch(directUrl, {
+            method: 'POST', headers, body: JSON.stringify(payload)
+        });
+        if (response) return response;
+
+        // 策略 2：corsproxy.io（POST 代理）
+        // corsproxy.io 支持 POST 请求，只需在 URL 后追加目标
+        const proxyUrl = 'https://corsproxy.io/?' + encodeURIComponent(directUrl);
+        response = await tryFetch(proxyUrl, {
+            method: 'POST', headers, body: JSON.stringify(payload)
+        });
+        if (response) return response;
+
+        throw new ApiError('请求失败，请检查网络或 API 配置。如使用 file:// 协议打开页面，请改用本地 HTTP 服务器', 'ALL_FAILED');
+    }
+
+    async function tryFetch(url, opts) {
+        try {
+            const res = await fetch(url, opts);
+            if (!res.ok) {
+                let msg = `API 请求失败 (${res.status})`;
+                try { const e = await res.json(); if (e.error?.message) msg = e.error.message; } catch (_) {}
+                switch (res.status) {
+                    case 401: case 403: throw new ApiError('API 密钥无效，请检查设置', 'AUTH_ERROR');
+                    case 429: throw new ApiError('请求过于频繁，请稍后重试', 'RATE_LIMIT');
+                    case 400: throw new ApiError(`请求参数错误: ${msg}`, 'BAD_REQUEST');
+                }
+                if (res.status >= 500) throw new ApiError('服务器错误，请稍后重试', 'SERVER_ERROR');
+                return null; // 其他状态码，尝试下一个策略
+            }
+            const data = await res.json();
+            return parseGeminiResponse(data);
+        } catch (error) {
+            if (error instanceof ApiError) throw error;
+            return null; // 网络错误 / CORS 拦截，尝试下一个策略
+        }
+    }
+
+    function parseGeminiResponse(data) {
+        if (!data.candidates || data.candidates.length === 0) {
+            if (data.promptFeedback?.blockReason) {
+                throw new ApiError('内容被安全过滤拦截，请尝试其他视频', 'SAFETY');
+            }
+            throw new ApiError('模型未能生成内容，请重试', 'EMPTY_RESPONSE');
+        }
+
+        const candidate = data.candidates[0];
+        if (candidate.finishReason === 'SAFETY') {
+            throw new ApiError('内容被安全过滤拦截，请尝试其他视频', 'SAFETY');
+        }
+        if (candidate.finishReason === 'RECITATION') {
+            throw new ApiError('内容被引用限制拦截', 'RECITATION');
+        }
+        if (candidate.finishReason === 'MAX_TOKENS') {
+            // Still show partial result but with a warning
+        }
+
+        const text = candidate.content?.parts?.[0]?.text || '';
+        if (!text.trim()) {
+            throw new ApiError('模型未能生成内容，请重试', 'EMPTY_RESPONSE');
+        }
+
+        return {
+            text: text,
+            tokens: {
+                prompt: data.usageMetadata?.promptTokenCount || 0,
+                candidate: data.usageMetadata?.candidatesTokenCount || 0,
+                total: data.usageMetadata?.totalTokenCount || 0
+            },
+            finishReason: candidate.finishReason
+        };
+    }
+
+    // Custom error class
+    class ApiError extends Error {
+        constructor(message, code) {
+            super(message);
+            this.code = code;
+        }
+    }
+
+    function handleApiError(error) {
+        APP_STATE.isProcessing = false;
+        showLanding();
+
+        if (error instanceof ApiError) {
+            showToast(error.message, error.code === 'SAFETY' ? 'warning' : 'error');
+        } else if (error.name === 'TypeError' && error.message.includes('fetch')) {
+            showToast('网络连接失败，请检查网络', 'error');
+        } else {
+            showToast(error.message || '处理失败，请重试', 'error');
+        }
+    }
+
+    // ========== Processing Steps ==========
+    function advanceStep1() {
+        setTimeout(() => {
+            document.getElementById('step1Dot').className = 'step-dot done';
+            document.getElementById('step1Line').className = 'step-line done';
+            document.getElementById('step2Dot').className = 'step-dot active';
+            document.getElementById('step2Text').className = 'font-label-md text-on-surface';
+        }, 1500);
+    }
+
+    function advanceStep2() {
+        document.getElementById('step2Dot').className = 'step-dot done';
+    }
+
+    // ========== Result Display ==========
+    function displayResult(result, info) {
+        const promptArea = document.getElementById('promptResult');
+        isEditingPrompt = false;
+        promptArea.readOnly = true;
+        promptArea.classList.remove('editable');
+        document.getElementById('editBtn').innerHTML = '<span class="material-symbols-outlined text-[16px]">edit</span>编辑';
+
+        // Format text - ensure it starts with the prefix
+        let displayText = result.text;
+        if (!displayText.startsWith('【视频提示词】')) {
+            displayText = '【视频提示词】\n\n' + displayText;
+        }
+        promptArea.value = displayText;
+        updateCharCount();
+
+        // Update video info
+        document.getElementById('resultFileName').textContent = info.name || '视频';
+        const metaParts = [];
+        if (info.size) metaParts.push(formatBytes(info.size));
+        if (info.type) metaParts.push(info.type);
+        document.getElementById('resultFileMeta').textContent = metaParts.join(' · ') || '--';
+        document.getElementById('resultInputType').textContent = info.type || '--';
+        document.getElementById('resultModel').textContent = info.model || '--';
+
+        // Token info
+        const tokens = result.tokens;
+        const tokenText = tokens ? `${tokens.prompt} / ${tokens.candidate} / ${tokens.total}` : '--';
+        document.getElementById('resultTokens').textContent = tokenText;
+
+        // Duration
+        const elapsed = ((Date.now() - APP_STATE.processingStartTime) / 1000).toFixed(1);
+        document.getElementById('resultDuration').textContent = `${elapsed}s`;
+
+        // Subtitle with finish reason
+        const subtitle = document.getElementById('resultSubtitle');
+        if (result.finishReason === 'MAX_TOKENS') {
+            subtitle.textContent = '提示词已生成（结果可能被截断，建议增加 Max Tokens）';
+        } else {
+            subtitle.textContent = 'AI 已分析视频内容并生成了以下中文提示词';
+        }
+
+        // Store result for regeneration
+        window._lastResult = result;
+        window._lastInfo = info;
+    }
+
+    function updateCharCount() {
+        const text = document.getElementById('promptResult').value;
+        document.getElementById('promptCharCount').textContent = `${text.length} 字符`;
+    }
+
+    function toggleEditPrompt() {
+        const area = document.getElementById('promptResult');
+        const btn = document.getElementById('editBtn');
+        isEditingPrompt = !isEditingPrompt;
+        area.readOnly = !isEditingPrompt;
+        area.classList.toggle('editable', isEditingPrompt);
+        btn.innerHTML = isEditingPrompt
+            ? '<span class="material-symbols-outlined text-[16px]">check</span>完成'
+            : '<span class="material-symbols-outlined text-[16px]">edit</span>编辑';
+        if (isEditingPrompt) {
+            area.focus();
+        }
+    }
+
+    async function copyPrompt() {
+        const text = document.getElementById('promptResult').value;
+        if (!text || text === '等待生成...') {
+            showToast('没有可复制的内容', 'info');
+            return;
+        }
+        try {
+            await navigator.clipboard.writeText(text);
+            showToast('已复制到剪贴板', 'success');
+        } catch (e) {
+            // Fallback
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            showToast('已复制到剪贴板', 'success');
+        }
+    }
+
+    async function regeneratePrompt() {
+        if (!window._lastResult) {
+            showToast('没有可重新生成的内容', 'warning');
+            return;
+        }
+
+        if (!APP_STATE.apiConfig.apiKey) {
+            showToast('请先在设置中配置 API 密钥', 'warning');
+            toggleSettings();
+            return;
+        }
+
+        showProcessing();
+        advanceStep1();
+
+        try {
+            // Reuse the same payload structure by reading the current info
+            const info = window._lastInfo;
+            let payload;
+
+            if (info.type === 'URL 链接') {
+                const url = info.name;
+                const mimeType = isDirectVideoUrl(url) ? getMimeTypeFromUrl(url) : 'video/mp4';
+                payload = {
+                    contents: [{
+                        parts: [
+                            { fileData: { fileUri: url, mimeType: mimeType } },
+                            { text: SYSTEM_PROMPT }
+                        ]
+                    }],
+                    generationConfig: {
+                        temperature: APP_STATE.apiConfig.temperature,
+                        topP: 0.9,
+                        maxOutputTokens: APP_STATE.apiConfig.maxOutputTokens
+                    }
+                };
+            } else {
+                if (!APP_STATE.videoFile) {
+                    showToast('视频文件已丢失，请重新上传', 'error');
+                    showLanding();
+                    return;
+                }
+                const base64 = await fileToBase64(APP_STATE.videoFile);
+                const mimeType = getMimeTypeFromFile(APP_STATE.videoFile);
+                payload = {
+                    contents: [{
+                        parts: [
+                            { inlineData: { mimeType: mimeType, data: base64 } },
+                            { text: SYSTEM_PROMPT }
+                        ]
+                    }],
+                    generationConfig: {
+                        temperature: APP_STATE.apiConfig.temperature,
+                        topP: 0.9,
+                        maxOutputTokens: APP_STATE.apiConfig.maxOutputTokens
+                    }
+                };
+            }
+
+            const result = await callGeminiAPI(payload);
+            advanceStep2();
+            displayResult(result, info);
+            showResult();
+
+        } catch (error) {
+            handleApiError(error);
+        }
+    }
+
+    // ========== Drag & Drop ==========
+    function setupDragDrop() {
+        const dropZone = document.getElementById('dropZone');
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (!APP_STATE.videoFile) {
+                dropZone.classList.add('drag-over');
+            }
+        });
+
+        dropZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropZone.classList.remove('drag-over');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dropZone.classList.remove('drag-over');
+
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                const file = files[0];
+                if (file.type.startsWith('video/') || isSupportedVideoType(file.name)) {
+                    handleFileSelect(file);
+                } else {
+                    showToast('请拖入视频文件（MP4/WebM/MOV）', 'error');
+                }
+            }
+        });
+    }
+
+    // ========== Event Listeners ==========
+    document.addEventListener('DOMContentLoaded', function() {
+        loadConfig();
+        syncSettingsUI();
+
+        // Enter key for URL input
+        document.getElementById('urlInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                submitVideoUrl();
+            }
+        });
+
+        // Setup drag and drop
+        setupDragDrop();
+
+        // Listen for prompt text changes for char count
+        document.getElementById('promptResult').addEventListener('input', updateCharCount);
+
+        // Settings key shortcut
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                const overlay = document.getElementById('settingsOverlay');
+                if (overlay.classList.contains('active')) {
+                    toggleSettings();
+                }
+            }
+        });
+    });
+</script>
+
+</body>
+</html>
