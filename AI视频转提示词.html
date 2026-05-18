@@ -1268,35 +1268,28 @@
 
     const VIDEO_EXTENSIONS = ['.mp4', '.webm', '.mov', '.avi', '.mkv', '.m4v', '.3gp'];
     const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
-    const SYSTEM_PROMPT = `你是一个顶级的视频内容深度分析专家。请对用户提供的视频进行全面、细致的分析和描述，最终生成两套高质量的提示词（中文和英文）。
+    const SYSTEM_PROMPT = `你是顶级视频内容分析专家。分析视频后，直接输出最终结果，禁止输出分析过程或推理步骤。
 
-【分析维度 — 请逐项深入】
-1. 画面主体：识别并描述视频中的所有主体（人物、动物、产品、物体），包括外貌特征、服装、姿态
-2. 场景环境：详细描述空间、地点、天气、时间、光线条件、背景元素
-3. 人物/角色：数量、性别年龄估计、表情、情绪、动作、互动关系
-4. 运镜手法：镜头类型（特写/中景/远景等）、角度（俯拍/仰拍/平视）、运镜方式（推拉摇移跟/固定）
-5. 光影色彩：主光源方向、亮度、色温、色调风格（暖/冷/中性）、饱和度、对比度
-6. 动态节奏：画面剪辑节奏、转场方式、运动速度感
-7. 音频内容：对话/旁白内容、背景音乐风格、音效、整体音频氛围
-8. 叙事结构：视频的主题/故事线，开头-发展-结尾，核心传达的信息
-9. 风格标签：实拍/动画/CG/混搭、纪实/剧情/广告/教程/Vlog 等类型
-10. 情感氛围：整体的情绪基调（欢快/悲伤/紧张/平静/浪漫等）
+请按以下维度全面分析视频：
+- 主体与环境：人物/物体特征、服装、场景地点、空间背景
+- 动作与情绪：动作姿态、表情、互动关系、整体氛围
+- 运镜与光影：镜头类型、角度、运镜方式、光源、色温、色调
+- 音频与对白：对话内容、旁白、背景音乐、音效
+- 剪辑与节奏：转场方式、画面节奏、叙事结构
 
-【输出格式 — 严格按以下格式输出，两个部分缺一不可】
+【严格要求：禁止输出任何分析过程、思考步骤、推理文字】
+只输出以下两个代码块，其他什么都不输出：
 
 ---CHINESE_PROMPT_START---
-【中文提示词】
-在中文环境下生成一段 150-400 字的完整中文提示词，必须包含：
-主体描述、场景环境、动作动态、光线氛围、色彩风格、镜头语言、音频描述。
-语言精炼富有画面感，可直接用于 AI 视频生成工具（如 Sora、Runway、Kling 等）。
-必须用中文撰写。
+将视频内容转化为一段可直接用于 AI 视频生成工具的中文提示词（150-400字）。
+包含：主体描述、场景环境、动作动态、光线氛围、色彩风格、镜头语言、音频描述。
+语言精炼、画面感强。直接开始写中文提示词，不要加任何前缀或说明。
 ---CHINESE_PROMPT_END---
 
 ---ENGLISH_PROMPT_START---
-【English Prompt】
-Generate a detailed 150-400 word English prompt suitable for AI video generation tools (Sora, Runway, Kling, etc.).
-Include: subject description, scene/environment, motion/action, lighting/atmosphere, color palette/style, camera language, audio/sound.
-Must be written in English.
+A detailed English prompt for AI video generation tools (Sora, Runway, Kling), 150-400 words.
+Include: subject, scene, motion, lighting, color style, camera language, audio.
+Direct prompt text only, no introduction or explanation.
 ---ENGLISH_PROMPT_END---`;
 
     // ========== State ==========
