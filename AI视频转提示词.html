@@ -1268,28 +1268,29 @@
 
     const VIDEO_EXTENSIONS = ['.mp4', '.webm', '.mov', '.avi', '.mkv', '.m4v', '.3gp'];
     const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
-    const SYSTEM_PROMPT = `你是顶级视频内容分析专家。分析视频后，直接输出最终结果，禁止输出分析过程或推理步骤。
+    const SYSTEM_PROMPT = `你是一个视频内容分析专家。请分析视频并直接生成中文和英文提示词。
 
-请按以下维度全面分析视频：
-- 主体与环境：人物/物体特征、服装、场景地点、空间背景
-- 动作与情绪：动作姿态、表情、互动关系、整体氛围
-- 运镜与光影：镜头类型、角度、运镜方式、光源、色温、色调
-- 音频与对白：对话内容、旁白、背景音乐、音效
-- 剪辑与节奏：转场方式、画面节奏、叙事结构
+IMPORTANT: Do NOT output any reasoning, thinking process, or analysis steps. Output ONLY the final prompts.
 
-【严格要求：禁止输出任何分析过程、思考步骤、推理文字】
-只输出以下两个代码块，其他什么都不输出：
+Analyze the video across these dimensions:
+- Subjects & Environment (people, objects, clothing, location, space)
+- Action & Emotion (movement, expressions, interactions, mood)
+- Cinematography & Lighting (shot types, angles, camera movement, light, color temperature)
+- Audio & Dialogue (speech content, background music, sound effects)
+- Editing & Pacing (transitions, rhythm, narrative structure)
+
+Now output exactly the two blocks below. Nothing else. No markdown formatting, no thinking.
 
 ---CHINESE_PROMPT_START---
-将视频内容转化为一段可直接用于 AI 视频生成工具的中文提示词（150-400字）。
+将视频内容转化为可直接用于 AI 视频生成工具的中文提示词（150-400字）。
 包含：主体描述、场景环境、动作动态、光线氛围、色彩风格、镜头语言、音频描述。
-语言精炼、画面感强。直接开始写中文提示词，不要加任何前缀或说明。
+必须使用中文撰写。直接写提示词正文，不要添加任何说明、前缀或推理过程。
 ---CHINESE_PROMPT_END---
 
 ---ENGLISH_PROMPT_START---
-A detailed English prompt for AI video generation tools (Sora, Runway, Kling), 150-400 words.
-Include: subject, scene, motion, lighting, color style, camera language, audio.
-Direct prompt text only, no introduction or explanation.
+Generate a detailed English prompt for AI video generation tools (Sora, Runway, Kling), 150-400 words.
+Include: subject, scene, motion/action, lighting, color style, camera language, audio.
+Write the prompt text directly. No introductions, explanations, or thinking process.
 ---ENGLISH_PROMPT_END---`;
 
     // ========== State ==========
@@ -1764,7 +1765,8 @@ Direct prompt text only, no introduction or explanation.
                 generationConfig: {
                     temperature: APP_STATE.apiConfig.temperature,
                     topP: 0.9,
-                    maxOutputTokens: APP_STATE.apiConfig.maxOutputTokens
+                    maxOutputTokens: APP_STATE.apiConfig.maxOutputTokens,
+                    thinkingConfig: { includeThoughts: false }
                 }
             };
 
@@ -1817,7 +1819,8 @@ Direct prompt text only, no introduction or explanation.
                 generationConfig: {
                     temperature: APP_STATE.apiConfig.temperature,
                     topP: 0.9,
-                    maxOutputTokens: APP_STATE.apiConfig.maxOutputTokens
+                    maxOutputTokens: APP_STATE.apiConfig.maxOutputTokens,
+                    thinkingConfig: { includeThoughts: false }
                 }
             };
 
