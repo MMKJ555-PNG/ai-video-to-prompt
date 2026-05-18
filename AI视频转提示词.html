@@ -1080,9 +1080,14 @@
                     <div class="glass-card-strong rounded-2xl overflow-hidden">
                         <!-- Prompt Header -->
                         <div class="flex items-center justify-between px-6 py-4 border-b border-white/5">
-                            <div class="flex items-center gap-2">
+                            <div class="flex items-center gap-3">
                                 <span class="material-symbols-outlined text-primary">prompt_suggestion</span>
                                 <span class="font-label-md">生成提示词</span>
+                                <!-- 语言切换 -->
+                                <div class="flex items-center gap-1 ml-2">
+                                    <button class="px-3 py-1.5 rounded-full text-label-sm border transition-all select-none" id="langZhBtn" style="background:rgba(160,120,255,0.2);border-color:rgba(160,120,255,0.35);color:#d0bcff;" onclick="showPromptByLang('zh')">中文</button>
+                                    <button class="px-3 py-1.5 rounded-full text-label-sm border transition-all select-none" id="langEnBtn" style="background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.06);color:#cbc3d7;" onclick="showPromptByLang('en')">English</button>
+                                </div>
                             </div>
                             <div class="flex items-center gap-1.5">
                                 <button class="px-3.5 py-2 rounded-full bg-white/[0.04] border border-white/[0.06] text-label-sm flex items-center gap-1.5 hover:bg-white/[0.08] hover:border-white/[0.12] active:scale-95 transition-all select-none" id="editBtn" onclick="toggleEditPrompt()">
@@ -1107,9 +1112,9 @@
                         <div class="flex items-center justify-between px-6 py-4 border-t border-white/[0.04] bg-white/[0.01]">
                             <span class="text-label-sm text-on-surface-variant/40 select-none" id="promptCharCount">0 字符</span>
                             <div class="flex gap-2">
-                                <button class="px-4 py-2 rounded-full bg-white/[0.04] border border-white/[0.06] text-label-sm flex items-center gap-1.5 hover:bg-white/[0.08] hover:border-white/[0.12] active:scale-95 transition-all select-none" onclick="copyPrompt()">
+                                <button class="px-4 py-2 rounded-full bg-white/[0.04] border border-white/[0.06] text-label-sm flex items-center gap-1.5 hover:bg-white/[0.08] hover:border-white/[0.12] active:scale-95 transition-all select-none" onclick="copyAllPrompts()">
                                     <span class="material-symbols-outlined text-[16px]">content_copy</span>
-                                    复制到剪贴板
+                                    复制全部
                                 </button>
                                 <button class="px-4 py-2 rounded-full bg-gradient-to-r from-primary-container/20 to-secondary-container/20 border border-primary/15 text-label-sm flex items-center gap-1.5 hover:from-primary-container/35 hover:border-primary/30 active:scale-95 transition-all primary-glow select-none" onclick="showLanding()">
                                     <span class="material-symbols-outlined text-[16px]">add</span>
@@ -1263,21 +1268,36 @@
 
     const VIDEO_EXTENSIONS = ['.mp4', '.webm', '.mov', '.avi', '.mkv', '.m4v', '.3gp'];
     const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
-    const SYSTEM_PROMPT = `你是一个专业的视频内容分析助手。请详细分析用户提供的视频，并生成一段高质量的中文提示词。
+    const SYSTEM_PROMPT = `你是一个顶级的视频内容深度分析专家。请对用户提供的视频进行全面、细致的分析和描述，最终生成两套高质量的提示词（中文和英文）。
 
-分析要求：
-1. 描述视频中的场景、环境、人物、物体等视觉元素
-2. 分析人物的动作、表情、互动
-3. 描述拍摄手法、构图、光线和色彩风格
-4. 识别视频的情绪氛围和风格特点
-5. 如存在音频，描述音频内容和背景音乐
+【分析维度 — 请逐项深入】
+1. 画面主体：识别并描述视频中的所有主体（人物、动物、产品、物体），包括外貌特征、服装、姿态
+2. 场景环境：详细描述空间、地点、天气、时间、光线条件、背景元素
+3. 人物/角色：数量、性别年龄估计、表情、情绪、动作、互动关系
+4. 运镜手法：镜头类型（特写/中景/远景等）、角度（俯拍/仰拍/平视）、运镜方式（推拉摇移跟/固定）
+5. 光影色彩：主光源方向、亮度、色温、色调风格（暖/冷/中性）、饱和度、对比度
+6. 动态节奏：画面剪辑节奏、转场方式、运动速度感
+7. 音频内容：对话/旁白内容、背景音乐风格、音效、整体音频氛围
+8. 叙事结构：视频的主题/故事线，开头-发展-结尾，核心传达的信息
+9. 风格标签：实拍/动画/CG/混搭、纪实/剧情/广告/教程/Vlog 等类型
+10. 情感氛围：整体的情绪基调（欢快/悲伤/紧张/平静/浪漫等）
 
-提示词输出要求：
-- 全程使用中文
-- 以"【视频提示词】"开头
-- 包含：主体描述、场景环境、动作动态、光线氛围、色彩风格、镜头语言
-- 长度在 100-300 字之间
-- 语言精炼、富有画面感，可直接用于 AI 视频生成工具`;
+【输出格式 — 严格按以下格式输出，两个部分缺一不可】
+
+---CHINESE_PROMPT_START---
+【中文提示词】
+在中文环境下生成一段 150-400 字的完整中文提示词，必须包含：
+主体描述、场景环境、动作动态、光线氛围、色彩风格、镜头语言、音频描述。
+语言精炼富有画面感，可直接用于 AI 视频生成工具（如 Sora、Runway、Kling 等）。
+必须用中文撰写。
+---CHINESE_PROMPT_END---
+
+---ENGLISH_PROMPT_START---
+【English Prompt】
+Generate a detailed 150-400 word English prompt suitable for AI video generation tools (Sora, Runway, Kling, etc.).
+Include: subject description, scene/environment, motion/action, lighting/atmosphere, color palette/style, camera language, audio/sound.
+Must be written in English.
+---ENGLISH_PROMPT_END---`;
 
     // ========== State ==========
     const APP_STATE = {
@@ -1961,21 +1981,46 @@
         document.getElementById('step2Dot').className = 'step-dot done';
     }
 
+    // ========== Result Parsing ==========
+    function extractChinesePrompt(text) {
+        const m = text.match(/---CHINESE_PROMPT_START---\s*([\s\S]*?)---CHINESE_PROMPT_END---/i);
+        return m ? m[1].trim() : '';
+    }
+    function extractEnglishPrompt(text) {
+        const m = text.match(/---ENGLISH_PROMPT_START---\s*([\s\S]*?)---ENGLISH_PROMPT_END---/i);
+        return m ? m[1].trim() : '';
+    }
+
     // ========== Result Display ==========
     function displayResult(result, info) {
+        const rawText = result.text;
+        const chinesePrompt = extractChinesePrompt(rawText);
+        const englishPrompt = extractEnglishPrompt(rawText);
+
+        // 存储到全局
+        window._chinesePrompt = chinesePrompt || rawText;
+        window._englishPrompt = englishPrompt || '';
+
+        // 默认显示中文
+        window._currentLang = 'zh';
+        showPromptByLang('zh');
+
         const promptArea = document.getElementById('promptResult');
         isEditingPrompt = false;
         promptArea.readOnly = true;
         promptArea.classList.remove('editable');
         document.getElementById('editBtn').innerHTML = '<span class="material-symbols-outlined text-[16px]">edit</span>编辑';
 
-        // Format text - ensure it starts with the prefix
-        let displayText = result.text;
-        if (!displayText.startsWith('【视频提示词】')) {
-            displayText = '【视频提示词】\n\n' + displayText;
-        }
-        promptArea.value = displayText;
         updateCharCount();
+
+        // 更新语言切换按钮
+        const zhBtn = document.getElementById('langZhBtn');
+        const enBtn = document.getElementById('langEnBtn');
+        if (zhBtn && enBtn) {
+            zhBtn.style.display = englishPrompt ? '' : 'none';
+            enBtn.style.display = englishPrompt ? '' : 'none';
+            setLangBtnActive('zh');
+        }
 
         // Update video info
         document.getElementById('resultFileName').textContent = info.name || '视频';
@@ -2000,7 +2045,7 @@
         if (result.finishReason === 'MAX_TOKENS') {
             subtitle.textContent = '提示词已生成（结果可能被截断，建议增加 Max Tokens）';
         } else {
-            subtitle.textContent = 'AI 已分析视频内容并生成了以下中文提示词';
+            subtitle.textContent = 'AI 已深度分析视频并生成中英文提示词';
         }
 
         // Store result for regeneration
@@ -2008,9 +2053,25 @@
         window._lastInfo = info;
     }
 
+    function showPromptByLang(lang) {
+        const area = document.getElementById('promptResult');
+        area.value = lang === 'zh' ? (window._chinesePrompt || '') : (window._englishPrompt || '');
+        window._currentLang = lang;
+        updateCharCount();
+        setLangBtnActive(lang);
+    }
+
+    function setLangBtnActive(lang) {
+        const zhBtn = document.getElementById('langZhBtn');
+        const enBtn = document.getElementById('langEnBtn');
+        if (zhBtn) { zhBtn.style.background = lang === 'zh' ? 'rgba(160,120,255,0.2)' : ''; zhBtn.style.borderColor = lang === 'zh' ? 'rgba(160,120,255,0.35)' : ''; zhBtn.style.color = lang === 'zh' ? '#d0bcff' : ''; }
+        if (enBtn) { enBtn.style.background = lang === 'en' ? 'rgba(160,120,255,0.2)' : ''; enBtn.style.borderColor = lang === 'en' ? 'rgba(160,120,255,0.35)' : ''; enBtn.style.color = lang === 'en' ? '#d0bcff' : ''; }
+    }
+
     function updateCharCount() {
         const text = document.getElementById('promptResult').value;
-        document.getElementById('promptCharCount').textContent = `${text.length} 字符`;
+        const lang = window._currentLang === 'zh' ? '中文' : '英文';
+        document.getElementById('promptCharCount').textContent = `${text.length} 字符 · ${lang}`;
     }
 
     function toggleEditPrompt() {
@@ -2025,6 +2086,12 @@
         if (isEditingPrompt) {
             area.focus();
         }
+        // 编辑时同步保存到当前语言
+        if (!isEditingPrompt && window._currentLang === 'zh') {
+            window._chinesePrompt = area.value;
+        } else if (!isEditingPrompt && window._currentLang === 'en') {
+            window._englishPrompt = area.value;
+        }
     }
 
     async function copyPrompt() {
@@ -2037,7 +2104,6 @@
             await navigator.clipboard.writeText(text);
             showToast('已复制到剪贴板', 'success');
         } catch (e) {
-            // Fallback
             const ta = document.createElement('textarea');
             ta.value = text;
             document.body.appendChild(ta);
@@ -2045,6 +2111,29 @@
             document.execCommand('copy');
             document.body.removeChild(ta);
             showToast('已复制到剪贴板', 'success');
+        }
+    }
+
+    // 复制全部（中英文）
+    async function copyAllPrompts() {
+        const cn = window._chinesePrompt || '';
+        const en = window._englishPrompt || '';
+        const all = `【中文提示词】\n\n${cn}\n\n---\n\n【English Prompt】\n\n${en}`;
+        if (!cn && !en) {
+            showToast('没有可复制的内容', 'info');
+            return;
+        }
+        try {
+            await navigator.clipboard.writeText(all);
+            showToast('中英文提示词已全部复制', 'success');
+        } catch (e) {
+            const ta = document.createElement('textarea');
+            ta.value = all;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            showToast('中英文提示词已全部复制', 'success');
         }
     }
 
